@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/myOS.iml" filepath="$PROJECT_DIR$/myOS.iml" />
+      <module fileurl="file://G:/操作系统/大三上-操作系统课设(模拟磁盘文件系统实现)-JavaFX/我的代码和报告/myOs8/myOs8.iml" filepath="G:/操作系统/大三上-操作系统课设(模拟磁盘文件系统实现)-JavaFX/我的代码和报告/myOs8/myOs8.iml" />
+    </modules>
+  </component>
+</project>
