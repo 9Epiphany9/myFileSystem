@@ -96,7 +96,6 @@ public class Disk
         return b;
     }
 
-    //在notepad++查看十六进制的文件数据测试的，不需要这个函数
     // 打印模拟硬盘信息，主要用于调试系统 //按字节，打印前8个块
 /*	public static void diskPrint()
 	{

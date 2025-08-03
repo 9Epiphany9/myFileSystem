@@ -93,6 +93,21 @@ public class MainFrame extends JFrame {
     }
 
     public static void main(String[] args) {
+        // 程序启动时创建data.txt
+        try {
+            new java.io.File("data.txt").createNewFile();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+
+        // 注册关闭钩子，程序退出时删除data.txt
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            java.io.File dataFile = new java.io.File("data.txt");
+            if (dataFile.exists()) {
+                dataFile.delete();
+            }
+        }));
+
         SwingUtilities.invokeLater(MainFrame::new);
     }
 }
