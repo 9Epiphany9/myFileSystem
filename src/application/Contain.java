@@ -2,33 +2,42 @@ package application;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import javax.swing.*;
-
-import kernel.FileManage;
+import javax.swing.JPanel;
+import javax.swing.JButton;
 import kernel.FileMsg;
 
 public class Contain {
-    public static JPanel rootPanel;
-    public static ArrayList<FileMsg> path = new ArrayList<>();
-    public static HashMap<FileMsg, JButton> map = new HashMap<>();
+    private static JPanel rootPane;
+    private static ArrayList<FileMsg> path;
+    private static HashMap<FileMsg, JButton> map;
 
-    public static void refreshDirectory() {
-        rootPanel.removeAll();
-        HashMap<FileMsg, JButton> currentMap = FileManage.dir(path, map);
-        map.clear();
-        map.putAll(currentMap);
-
-        for (JButton btn : map.values()) {
-            rootPanel.add(btn);
-        }
-
-        rootPanel.revalidate();
-        rootPanel.repaint();
-    }
-    public Contain(JPanel rootPanel) {
-        this.rootPanel = rootPanel;
-        path = new ArrayList<>();
-        map = new HashMap<>();
+    public Contain(JPanel rootPane) {
+        Contain.rootPane = rootPane;
+        Contain.path = new ArrayList<>();
+        Contain.map = new HashMap<>();
     }
 
+    public static JPanel getRootPane() {
+        return rootPane;
+    }
+
+    public static void setRootPane(JPanel rootPane) {
+        Contain.rootPane = rootPane;
+    }
+
+    public static ArrayList<FileMsg> getPath() {
+        return path;
+    }
+
+    public static void setPath(ArrayList<FileMsg> path) {
+        Contain.path = path;
+    }
+
+    public static HashMap<FileMsg, JButton> getMap() {
+        return map;
+    }
+
+    public static void setMap(HashMap<FileMsg, JButton> map) {
+        Contain.map = map;
+    }
 }

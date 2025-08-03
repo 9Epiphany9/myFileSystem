@@ -1,142 +1,126 @@
 package kernel;
 
-import java.io.File;
 import java.io.RandomAccessFile;
-import java.io.IOException;
 
-public class Disk {
-    private static final String DISK_FILE = "data.txt";
-    private static final int BLOCK_SIZE = 64;
-    private static final int TOTAL_BLOCKS = 128;
-
-    public static FileMsg loadRootDirectory() {
-        byte[] rootBlock = readBlock(2); // 根目录在块2
-        if (rootBlock[0] == '$') {
-            return null; // 空目录
+/**
+ * 操作用文件模拟出来的磁盘
+ */
+/*RandomAccessFile raf = new RandomAccessFile("data.txt", "rw"),new时打开流，但又怕这个类的函数里会有很多
+没用的对象留下，所以可以一进程序就打开这个文件，结束时关掉流。后面可以改写成这样*/
+public class Disk
+{
+    // 磁盘初始化：先128个块全部清空，然后给FAT表的前三个字节填上255，然后给盘块2根目录的8个目录项都填上"$",表示这些是空目录项
+    public static void start()
+    {
+        byte[] buffer = new byte[64];
+        for (int i = 0; i < 64; i++)
+        {
+            buffer[i] = 0;
         }
+        for (int i = 0; i < 128; i++)
+        {
+            writeBlock(i, buffer);
+        }
+        writeOnlyByte(0, 0, 0, (byte) 255);
+        writeOnlyByte(0, 0, 1, (byte) 255);
+        writeOnlyByte(0, 0, 2, (byte) 255);
 
-        // 解析根目录信息并创建FileMsg对象
-        byte[] name = new byte[]{rootBlock[0], rootBlock[1], rootBlock[2]};
-        byte[] type = new byte[]{rootBlock[3], rootBlock[4]};
-        byte attribute = rootBlock[5];
-        byte startBlock = rootBlock[6];
-        byte length = rootBlock[7];
-
-        return new FileMsg(name, type, attribute, startBlock, length);
-    }
-
-    // 添加方法：检查磁盘是否已初始化
-    public static boolean isInitialized() {
-        File file = new File(DISK_FILE);
-        return file.exists() && file.length() >= TOTAL_BLOCKS * BLOCK_SIZE;
-    }
-    public static void start() {
-        File file = new File(DISK_FILE);
-        try {
-            // 确保父目录存在
-            File parentDir = file.getParentFile();
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs();
-            }
-            // 创建或调整 data 文件
-            try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-                if (!file.exists() || file.length() < TOTAL_BLOCKS * BLOCK_SIZE) {
-                    raf.setLength(TOTAL_BLOCKS * BLOCK_SIZE); // 设置文件大小为 8192 字节
-                    // 初始化 FAT 表（块 0 和 1）
-                    byte[] fat = new byte[BLOCK_SIZE * 2];
-                    fat[0] = (byte) 255; // 块 0 (FAT)
-                    fat[1] = (byte) 255; // 块 1 (FAT)
-                    fat[2] = (byte) 255; // 块 2 (根目录)
-                    raf.seek(0);
-                    raf.write(fat);
-                    // 初始化根目录（块 2），用 '$' 表示空条目
-                    byte[] rootBlock = new byte[BLOCK_SIZE];
-                    for (int i = 0; i < 8; i++) {
-                        rootBlock[i * 8] = (byte) '$';
-                    }
-                    raf.seek(2 * BLOCK_SIZE);
-                    raf.write(rootBlock);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("警告：无法初始化磁盘文件：" + e.getMessage());
-            // 尝试在当前目录创建文件
-            try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "rw")) {
-                raf.setLength(TOTAL_BLOCKS * BLOCK_SIZE);
-                byte[] fat = new byte[BLOCK_SIZE * 2];
-                fat[0] = (byte) 255;
-                fat[1] = (byte) 255;
-                fat[2] = (byte) 255;
-                raf.seek(0);
-                raf.write(fat);
-                byte[] rootBlock = new byte[BLOCK_SIZE];
-                for (int i = 0; i < 8; i++) {
-                    rootBlock[i * 8] = (byte) '$';
-                }
-                raf.seek(2 * BLOCK_SIZE);
-                raf.write(rootBlock);
-            } catch (IOException ex) {
-                throw new RuntimeException("严重错误：无法创建或初始化磁盘文件：" + ex.getMessage());
-            }
+        for(int i=0;i<8;i++) {
+            Disk.writeOnlyByte(2, i, 0, (byte) '$');
         }
     }
 
-    public static byte[] readBlock(int blockNum) {
-        byte[] buffer = new byte[BLOCK_SIZE];
-        try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "r")) {
-            raf.seek(blockNum * BLOCK_SIZE);
-            int bytesRead = raf.read(buffer);
-            if (bytesRead < BLOCK_SIZE && bytesRead != -1) {
-                for (int i = bytesRead; i < BLOCK_SIZE; i++) {
-                    buffer[i] = 0;
-                }
+    // 读文件 // 把下标为indexOfSector的盘块的64个字节读到byte[]里返回
+    public static byte[] readBlock(int indexOfSector)
+    {
+        byte[] buffer = new byte[64];
+        try (RandomAccessFile raf = new RandomAccessFile("data.txt", "rw"))
+        {
+            long pointer = indexOfSector * 64;
+            for (int i = 0; i < 64; i++)
+            {
+                raf.seek(pointer + i);
+                buffer[i] = raf.readByte();
             }
-        } catch (IOException e) {
-            System.err.println("警告：无法读取块 " + blockNum + "：" + e.getMessage());
-            for (int i = 0; i < BLOCK_SIZE; i++) {
-                buffer[i] = 0;
-            }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
         }
         return buffer;
     }
 
-    public static void writeBlock(int blockNum, byte[] buffer) {
-        try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "rw")) {
-            raf.seek(blockNum * BLOCK_SIZE);
-            raf.write(buffer);
-        } catch (IOException e) {
-            System.err.println("警告：无法写入块 " + blockNum + "：" + e.getMessage());
+    // 往文件写 // 把byte[]里的64个字节写入到下标为indexOfSector的盘块里
+    public static void writeBlock(int indexOfSector, byte[] buffer)
+    {
+        try (RandomAccessFile raf = new RandomAccessFile("data.txt", "rw"))//这句new的时候如果没有该文件会自动创建的
+        {
+            long pointer = indexOfSector * 64;
+            for (int i = 0; i < 64; i++)
+            {
+                raf.seek(pointer + i);
+                raf.writeByte(buffer[i]);
+            }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 
-    public static byte readOnlyByte(int blockNum, int listNum, int index) {
-        try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "r")) {
-            raf.seek(blockNum * BLOCK_SIZE + listNum * 8 + index);
-            return raf.readByte();
-        } catch (IOException e) {
-            System.err.println("警告：无法读取块 " + blockNum + "，索引 " + (listNum * 8 + index) + "：" + e.getMessage());
-            return 0;
+    // 写单个字节
+    public static void writeOnlyByte(int blockNum, int listNum, int bNum, byte word)
+    {
+        try (RandomAccessFile raf = new RandomAccessFile("data.txt", "rw"))
+        {
+            long pointer = blockNum * 64 + listNum * 8 + bNum;
+            raf.seek(pointer);
+            raf.writeByte(word);
+        } catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 
-    public static void writeOnlyByte(int blockNum, int listNum, int index, byte b) {
-        try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "rw")) {
-            raf.seek(blockNum * BLOCK_SIZE + listNum * 8 + index);
-            raf.writeByte(b);
-        } catch (IOException e) {
-            System.err.println("警告：无法写入块 " + blockNum + "，索引 " + (listNum * 8 + index) + "：" + e.getMessage());
+    // 读单个字节
+    public static byte readOnlyByte(int blockNum, int listNum, int bNum)
+    {
+        byte b = -2;
+        try (RandomAccessFile raf = new RandomAccessFile("data.txt", "rw"))
+        {
+            long pointer = blockNum * 64 + listNum * 8 + bNum;// 按字节来找的。比如（0，0，3）得到FAT表中的字节3（字节0开始）
+            raf.seek(pointer);
+            b = raf.readByte();
+        } catch (Exception e)
+        {
+            e.printStackTrace();
         }
+        return b;
     }
 
-    public static void freeBlock(int blockNum) {
-        try (RandomAccessFile raf = new RandomAccessFile(DISK_FILE, "rw")) {
-            raf.seek(blockNum / BLOCK_SIZE * BLOCK_SIZE + blockNum % BLOCK_SIZE);
-            raf.writeByte(0);
-            raf.seek(blockNum * BLOCK_SIZE);
-            byte[] emptyBlock = new byte[BLOCK_SIZE];
-            raf.write(emptyBlock);
-        } catch (IOException e) {
-            System.err.println("警告：无法释放块 " + blockNum + "：" + e.getMessage());
-        }
+    //在notepad++查看十六进制的文件数据测试的，不需要这个函数
+    // 打印模拟硬盘信息，主要用于调试系统 //按字节，打印前8个块
+/*	public static void diskPrint()
+	{
+		System.out.println("按字节，打印前8个块：");
+		byte[] buffer = new byte[64];
+		for (int i = 0; i < 8; i++)
+		{
+			buffer = readBlock(i);
+			System.out.print("第" + i + "个块：");
+			for (int j = 0; j < 64; j++)
+			{
+				System.out.printf("%4d", buffer[j]);
+			}
+			System.out.println();
+		}
+		System.out.println("---------------------------------------------------");
+	}
+*/
+
+    // 回收磁盘块的块号为index:在FAT表中把这一块清0
+    public static void freeBlock(int index)
+    {
+        byte[] buffer = readBlock(index / 64);
+        buffer[index % 64] = 0;
+        writeBlock(index / 64, buffer);
     }
 }

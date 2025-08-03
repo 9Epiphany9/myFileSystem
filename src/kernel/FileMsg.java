@@ -2,14 +2,17 @@ package kernel;
 
 import java.util.Arrays;
 
-public class FileMsg implements Cloneable {
-    private byte[] fileName;
-    private byte[] backName;
-    private byte attribute;
-    private byte startBlock;
-    private byte length;
+//这个类是文件和目录的索引项，就是那个8个索引占一个盘块的那个索引项
+public class FileMsg implements Cloneable
+{
+    private byte[] fileName; // 文件名
+    private byte[] backName; // 文件类型名  //目录填空格，ascii码为32
+    private byte attribute; // 文件属性
+    private byte startBlock; // 起始盘块号
+    private byte length; // 文件长度，文件长度单位为盘块 //目录长度设置为0
 
-    public FileMsg(byte[] fileName, byte[] backName, byte attribute, byte startBlock, byte length) {
+    public FileMsg(byte[] fileName, byte[] backName, byte attribute, byte startBlock, byte length)
+    {
         this.fileName = fileName;
         this.backName = backName;
         this.attribute = attribute;
@@ -17,19 +20,24 @@ public class FileMsg implements Cloneable {
         this.length = length;
     }
 
-    public FileMsg(byte[] buffer, int index) {
-        this.fileName = new byte[]{buffer[index * 8 + 0], buffer[index * 8 + 1], buffer[index * 8 + 2]};
-        this.backName = new byte[]{buffer[index * 8 + 3], buffer[index * 8 + 4]};
+    // 创建FileMsg对象：传入一个盘块，和你要生成对象的目录项的下标
+    public FileMsg(byte[] buffer, int index)
+    {
+        this.fileName = new byte[]
+                { buffer[index * 8 + 0], buffer[index * 8 + 1], buffer[index * 8 + 2] };
+        this.backName = new byte[]
+                { buffer[index * 8 + 3], buffer[index * 8 + 4] };
         this.attribute = buffer[index * 8 + 5];
         this.startBlock = buffer[index * 8 + 6];
         this.length = buffer[index * 8 + 7];
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    protected Object clone() throws CloneNotSupportedException
+    {
         FileMsg fileMsg = (FileMsg) super.clone();
-        byte[] fileName = this.fileName;
-        byte[] backName = this.backName;
+        byte[] fileName = fileMsg.fileName;
+        byte[] backName = fileMsg.backName;
         byte[] newFileName = (byte[]) fileName.clone();
         byte[] newBackName = (byte[]) backName.clone();
         fileMsg.fileName = newFileName;
@@ -37,18 +45,25 @@ public class FileMsg implements Cloneable {
         return fileMsg;
     }
 
-    public String getAllName() {
+    // 目录返回名字，文件返回：名字.类型名
+    public String getAllName()
+    {
         StringBuffer str = new StringBuffer();
-        for (int i = 0; i < 3; i++) {
-            if (fileName[i] == (byte) '\0') {
+        for (int i = 0; i < 3; i++)
+        {
+            if (fileName[i] == (byte) '\0')
+            {
                 break;
             }
             str.append((char) fileName[i]);
         }
-        if (attribute < 8) {
+        if (attribute < 8) // attribute<8表示这是一个文件,不是目录
+        {
             str.append('.');
-            for (int i = 0; i < 2; i++) {
-                if (backName[i] == (byte) '\0') {
+            for (int i = 0; i < 2; i++)
+            {
+                if (backName[i] == (byte) '\0')
+                {
                     break;
                 }
                 str.append((char) backName[i]);
@@ -57,22 +72,30 @@ public class FileMsg implements Cloneable {
         return new String(str).trim();
     }
 
-    public static String getAllName2(byte[] fileMsg) {
-        byte[] fileName = new byte[]{fileMsg[0], fileMsg[1], fileMsg[2]};
-        byte[] backName = new byte[]{fileMsg[3], fileMsg[4]};
+    public static String getAllName2(byte[] fileMsg)
+    {
+        byte[] fileName = new byte[]
+                { fileMsg[0], fileMsg[1], fileMsg[2] };
+        byte[] backName = new byte[]
+                { fileMsg[3], fileMsg[4] };
         byte attribute = fileMsg[5];
 
         StringBuffer str = new StringBuffer();
-        for (int i = 0; i < 3; i++) {
-            if (fileName[i] == (byte) '\0') {
+        for (int i = 0; i < 3; i++)
+        {
+            if (fileName[i] == (byte) '\0')
+            {
                 break;
             }
             str.append((char) fileName[i]);
         }
-        if (attribute < 8) {
+        if (attribute < 8) // attribute<8表示这是一个文件,不是目录
+        {
             str.append('.');
-            for (int i = 0; i < 2; i++) {
-                if (backName[i] == (byte) '\0') {
+            for (int i = 0; i < 2; i++)
+            {
+                if (backName[i] == (byte) '\0')
+                {
                     break;
                 }
                 str.append((char) backName[i]);
@@ -81,48 +104,59 @@ public class FileMsg implements Cloneable {
         return new String(str);
     }
 
-    public byte[] getFileName() {
+    public byte[] getFileName()
+    {
         return fileName;
     }
 
-    public void setFileName(byte[] fileName) {
+    public void setFileName(byte[] fileName)
+    {
         this.fileName = fileName;
     }
 
-    public byte[] getBackName() {
+    public byte[] getBackName()
+    {
         return backName;
     }
 
-    public void setBackName(byte[] backName) {
+    public void setBackName(byte[] backName)
+    {
         this.backName = backName;
     }
 
-    public byte getAttribute() {
+    public byte getAttribute()
+    {
         return attribute;
     }
 
-    public void setAttribute(byte attribute) {
+    public void setAttribute(byte attribute)
+    {
         this.attribute = attribute;
     }
 
-    public byte getStartBlock() {
+    public byte getStartBlock()
+    {
         return startBlock;
     }
 
-    public void setStartBlock(byte startBlock) {
+    public void setStartBlock(byte startBlock)
+    {
         this.startBlock = startBlock;
     }
 
-    public byte getLength() {
+    public byte getLength()
+    {
         return length;
     }
 
-    public void setLength(byte length) {
+    public void setLength(byte length)
+    {
         this.length = length;
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         final int prime = 31;
         int result = 1;
         result = prime * result + attribute;
@@ -134,7 +168,8 @@ public class FileMsg implements Cloneable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(Object obj)
+    {
         if (this == obj)
             return true;
         if (obj == null)
@@ -154,4 +189,5 @@ public class FileMsg implements Cloneable {
             return false;
         return true;
     }
+
 }
