@@ -97,7 +97,7 @@ public class Disk
     }
 
     // 打印模拟硬盘信息，主要用于调试系统 //按字节，打印前8个块
-/*	public static void diskPrint()
+	public static void diskPrint()
 	{
 		System.out.println("按字节，打印前8个块：");
 		byte[] buffer = new byte[64];
@@ -113,7 +113,7 @@ public class Disk
 		}
 		System.out.println("---------------------------------------------------");
 	}
-*/
+
 
     // 回收磁盘块的块号为index:在FAT表中把这一块清0
     public static void freeBlock(int index)

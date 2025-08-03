@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -18,6 +20,7 @@ public class MainFrame extends JFrame {
     private JTable openFilesTable;
     private JButton backButton;
     private JButton newButton;
+    private JButton printDiskButton; // 新增调试按钮
 
     public MainFrame() {
         setTitle("磁盘文件系统");
@@ -43,8 +46,10 @@ public class MainFrame extends JFrame {
         JPanel toolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         backButton = new JButton("后退");
         newButton = new JButton("新建");
+        printDiskButton = new JButton("打印磁盘"); // 新增按钮
         toolBar.add(backButton);
         toolBar.add(newButton);
+        toolBar.add(printDiskButton); // 添加到工具栏
         add(toolBar, BorderLayout.NORTH);
 
         // 文件浏览器区域
@@ -73,6 +78,11 @@ public class MainFrame extends JFrame {
             dialog.setVisible(true);
         });
 
+        // 打印磁盘按钮事件
+        printDiskButton.addActionListener(e -> {
+            Disk.diskPrint(); // 调用调试方法
+        });
+
         setVisible(true);
     }
 
@@ -95,16 +105,20 @@ public class MainFrame extends JFrame {
     public static void main(String[] args) {
         // 程序启动时创建data.txt
         try {
-            new java.io.File("data.txt").createNewFile();
-        } catch (java.io.IOException e) {
+            new File("data.txt").createNewFile();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         // 注册关闭钩子，程序退出时删除data.txt
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            java.io.File dataFile = new java.io.File("data.txt");
+            File dataFile = new File("data.txt");
             if (dataFile.exists()) {
-                dataFile.delete();
+                if (dataFile.delete()) {
+                    System.out.println("data.txt 已删除");
+                } else {
+                    System.err.println("无法删除 data.txt");
+                }
             }
         }));
 
